@@ -43,6 +43,10 @@ const UserSchema=new mongoose.Schema({
 
 const Userdb=mongoose.model('User',UserSchema);
 
+const accountSchema=new mongoose.Schema({
+    
+})
+
 module.exports={
     Userdb
 };
