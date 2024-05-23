@@ -1,5 +1,6 @@
 const mongoose=require("mongoose");
 const {mongoDB_URL}=require("../config");
+const { number } = require("zod");
 
 mongoose.connect(mongoDB_URL);
 
@@ -44,9 +45,20 @@ const UserSchema=new mongoose.Schema({
 const Userdb=mongoose.model('User',UserSchema);
 
 const accountSchema=new mongoose.Schema({
-    
+    userId:{
+        type:String,
+        ref:'User',
+        required:true, //- *mendatory
+    },
+    balance:{
+        type:Number,
+        required:true
+    }
 })
 
+const Accountdb=mongoose.model('Account',accountSchema);
+
 module.exports={
-    Userdb
+    Userdb,
+    Accountdb
 };

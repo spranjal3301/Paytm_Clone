@@ -2,7 +2,7 @@ const express=require('express');
 const router=express.Router();
 const zod=require('zod');
 const jwt=require('jsonwebtoken');
-const { Userdb } = require('../db');
+const { Userdb, Accountdb } = require('../db');
 const {JWT_SECRET}=require('../config');
 const { authMiddleware } = require('../Middleware/auth');
 
@@ -53,11 +53,17 @@ router.post('/signup',async(req,res)=>{
         const newUser = new Userdb(userDetail);
         await newUser.save();
 
-        const token = jwt.sign({ id: newUser._id }, JWT_SECRET);
+        const balance= 1+Math.random()*10000;
+        const newAccount=new Accountdb({
+            userId,
+            balance
+        });
+        await newAccount.save();
+
+    
 
         res.status(201).json({
-            message: `User ${userId} created successfully`,
-            token
+            message: `User ${userId} created successfully with balance: ${balance}`
         });
     } catch (error) {
         res.status(500).json({
@@ -137,7 +143,8 @@ router.put("/",authMiddleware,async(req,res)=>{
 
 router.get('/bulk',async(req,res)=>{
     try {
-        const userName=req.query.filter;
+        const userName=req.query.filter || "";
+        
         const filterUser=await Userdb.find({userName:
                                         {
                                             $regex:userName,
