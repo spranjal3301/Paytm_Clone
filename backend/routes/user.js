@@ -47,7 +47,13 @@ router.post('/signup',async(req,res)=>{
 
         if (existingUser) {
             const errorMessage = existingUser.email === email ? "Email already exists" : "UserID already exists";
-            return res.status(409).json({ error: errorMessage });
+            return res.status(409).json(
+                { 
+                    message: errorMessage,
+                    error: true,
+                    success:false,
+
+            });
         }
 
         const newUser = new Userdb(userDetail);
@@ -60,14 +66,18 @@ router.post('/signup',async(req,res)=>{
         });
         await newAccount.save();
 
-    
+        const token=jwt.sign({userId},JWT_SECRET);
 
         res.status(201).json({
-            message: `User ${userId} created successfully with balance: ${balance}`
+            message: `User ${userId} created successfully with balance: ${balance}`,
+            error: false,
+            success:true,
         });
     } catch (error) {
         res.status(500).json({
-            message: "Error while signup"
+            message: `Error while signup ${error}`,
+            error: true,
+            success:false,
         });
     }   
 
@@ -83,7 +93,9 @@ router.post('/signin',async(req,res)=>{
         const { success } = signinBody.safeParse(req.body)
         if (!success) {
             return res.status(411).json({
-                message: "Incorrect inputs"
+                message: "Incorrect inputs",
+                success:false,
+                error:true
             })
         }
     
@@ -95,19 +107,28 @@ router.post('/signin',async(req,res)=>{
 
         if(!existingUser){
            return res.status(411).json({
-            message: "Error while logging in"
-            })
+            message: "User do not exist",
+            success:false,
+            error:true
+
+        })
         }
 
-        const token=jwt.sign({id:existingUser._id},JWT_SECRET);
+        const token=jwt.sign({userId:existingUser.userId},JWT_SECRET);
 
         return res.status(200).json({
-            token
+            token,
+            message: "Success",
+            success:true,
+            error:false,
+            userName:existingUser.userName
         });
 
     } catch (error) {
         res.status(500).json({
-            message: "Error while logging in"
+            message: "Error while logging in",
+            success:false,
+            error:true
         }); 
     }
 
@@ -117,7 +138,8 @@ router.post('/signin',async(req,res)=>{
 router.put("/",authMiddleware,async(req,res)=>{
  
     try {
-        const {userName,password,userId}=req.body;
+        const userId=req.userId;
+        const {userName,password}=req.body;
         const updateDetail={
             userName,
             password
@@ -141,9 +163,12 @@ router.put("/",authMiddleware,async(req,res)=>{
 })
 
 
+//-Search user
 router.get('/bulk',async(req,res)=>{
     try {
-        const userName=req.query.filter || "";
+        const userName=req.query.filter || "";  // http://localhost:3000/user/bulk/?filter=userName
+        const userId=req.userId;
+        // console.log(userId);
         
         const filterUser=await Userdb.find({userName:
                                         {
@@ -151,8 +176,10 @@ router.get('/bulk',async(req,res)=>{
                                             $options:'i'
                                         }
                                         });
+        const filterMe=filterUser.filter(user=>user.userId!=userId);
+
         res.status(200).json({
-           filterUser:filterUser.map(user=>{
+           filterUser:filterMe.map(user=>{
             return {
                 name:user.userName,
                 id:user.userId
@@ -162,10 +189,15 @@ router.get('/bulk',async(req,res)=>{
         
     } catch (error) {
          res.status(500).json({
-            message: "Error while filtering information"
+            message: "Error while filtering information",
+            success:false,
+            error:true
         }); 
     }
 })
+
+
+
 
 
 

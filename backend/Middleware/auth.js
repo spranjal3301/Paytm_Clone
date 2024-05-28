@@ -19,6 +19,8 @@ function authMiddleware(req,res,next){
             res.status(401).send("Unauthorized");
         } else {
             console.log(decoded);
+            req.userId=decoded.userId;
+            // console.log(decoded);
             next();
         }
     });
